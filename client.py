@@ -1,13 +1,18 @@
+"""
+Файл с кодом для присоединения к серверу. Можно отпарвить сообщение и получить его обратно от сервера.
+"""
+
 import socket
 import sys
+from messages import main
 
-server_addr = ("127.0.0.1", 11111)
+# server_addr = ("127.0.0.1", 11111)
+server_addr = ("192.168.0.12", 11111)
+
 
 # класс клиент
 class Client:
-    """
-    Подключается к локальному серверу
-    """
+
     def __init__(self, family, connect_type):
         self.family = family
         self.connect_type = connect_type
@@ -23,12 +28,10 @@ class Client:
 
     # получаем данные от пользователя и отправляем их
     def get_and_send_data(self):
-        self.running = True
         while True:
             msg = input("Введите текст сообщение:\n")
             if msg == "exit":
-                exit_message = f"Пользователь {self.connect_type} отключился от сервера"
-                self.client.sendall(str.encode(exit_message))
+                self.client.sendall(str.encode("exit"))
                 self.disconnect_from_server()
                 break
             else:
@@ -40,7 +43,6 @@ class Client:
                 continue
         self.client.close()
 
-
     # получаем сообщение от сервера
     def recv_data(self):
         try:
@@ -49,18 +51,15 @@ class Client:
         except socket.error as error:
             self.client.close()
 
+    # отсоединение от сервера
     def disconnect_from_server(self):
-        self.running = False
         self.client.close()
 
+    def main(self):
+        self.connect_to_server()
+        self.get_and_send_data()
 
 
 if __name__ == '__main__':
     client = Client(socket.AF_INET, socket.SOCK_STREAM)
-    client.connect_to_server()
-    message = "Hello from client"
-    client.get_and_send_data()
-    client.recv_data()
-
-
-
+    client.main()

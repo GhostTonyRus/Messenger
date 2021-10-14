@@ -5,33 +5,30 @@
 import sqlite3
 import socket
 import sys
-import multiprocessing
+import threading
 from datetime import datetime
+from constants import IP, PORT
 
 # server_addr = ("127.0.0.1", 11111)
-server_addr = ("192.168.0.12", 11111)
+server_addr = (IP, PORT)
 
 
 class Server:
 
     def __init__(self, family, connect_type):
-        self.family = family
-        self.type = connect_type
-        self.server = socket.socket(self.family, self.type)
+        self.__family = family
+        self.__type = connect_type
+        self.server = socket.socket(self.__family, self.__type)
         self.clients = {}
         self.msg_datetime = datetime.now()
         self.custom_msg_datetime = self.msg_datetime.strftime('%Y-%m-%d %H:%M:%S')
 
     # начинаем разделение
-    def start_multiprocessing(self, func, connection, client_addr):
-        # self.connections[connection] = client_addr
-        # self.connections.append(connection)
+    def start_client_thread(self, func, connection, client_addr):
         print(f"Пользователь {client_addr} присоединился к серверу")
-        # разбиваем получение и отправку сообщений от клиента на ядра процессора
-        multiprocess = multiprocessing.Process(target=func, args=(connection, client_addr))
-        multiprocess.daemon = True
-        multiprocess.start()
-        return multiprocess
+        thread = threading.Thread(target=func, args=(connection, client_addr))
+        thread.start()
+        return thread
 
     # биндим сервер на адрес локальной сети
     def bind_server(self, server_addr):
@@ -74,7 +71,7 @@ class Server:
             self.connection, self.client_addr = self.server.accept()
             self.clients[self.client_addr] = self.connection
             # добавление пользователей в поток
-            self.start_multiprocessing(func=self.get_users_connection, connection=self.connection,
+            self.start_client_thread(func=self.get_users_connection, connection=self.connection,
                                        client_addr=self.client_addr)
             continue
 

@@ -1,24 +1,16 @@
 import datetime
-import socket
-import sys
-import threading
 import time
 from datetime import datetime
-
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QDesktopWidget
-from constants import SERVER_ADDRESS
+from config import SERVER_ADDRESS
 from PyQt5 import QtWidgets, QtGui, QtCore
-from PyQt5.QtCore import QPoint, QThreadPool, QTimer, QThread, QDateTime
-from error_messages import show_empty_error, show_connect_error
-from app_logic import DataBase
+from PyQt5.QtCore import QPoint, QTimer, QThread, QDateTime
+from error_messages import show_empty_error, show_connect_error, show_authorization_error, show_success_registration
+from db_logic import DataBase
 from main_ui import Ui_MainWindow
 from settings_window import Ui_ChildWindow
 from client import Client
-
-# pyuic5 UI/main_ui.ui -o main_ui.py
-# pyuic5 UI/settings_window.ui - o settings_window.py
-
 
 client = Client()
 
@@ -31,7 +23,7 @@ class SettingsWindow(QtWidgets.QMainWindow):
         self.ui.setupUi(self)
 
         # настройка кнопок
-        # self.ui.btn_connect_to_server.clicked.connect(lambda: self.make_connect_to_server())
+        self.ui.btn_connect_to_server.clicked.connect(lambda: self.make_connect_to_server())
 
     # перетаскивание окна
     def center(self):
@@ -71,7 +63,8 @@ class MyWindow(QtWidgets.QMainWindow):
         super(MyWindow, self).__init__()
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
-        self.logic = DataBase()
+        self.db = DataBase()
+        self.__version = "v.0.5 alpha"
 
         # настройка времени
         # self.msg_datetime = datetime.now().strftime("%H:%M:%S %Y-%m-%d")
@@ -86,14 +79,19 @@ class MyWindow(QtWidgets.QMainWindow):
 
         # настройка кнопок
         self.ui.btn_registration.clicked.connect(lambda: self.show_registration_page())  # показать окно регистрации
+        self.ui.btn_register.clicked.connect(lambda: self.register_user()) # зарегистрирвоать пользователя
         self.ui.btn_enter.clicked.connect(self.enter_to_messenger)  # авторизация и вход на сервер
-        self.ui.btn_exit_from_messenger.clicked.connect(self.close)  # кнопка завершения работы программы (на страницу авторизации)
+        self.ui.btn_exit_from_messenger.clicked.connect(
+            self.close)  # кнопка завершения работы программы (на страницу авторизации)
         self.ui.btn_exit_to_auth_page.clicked.connect(lambda: self.show_authorization_page())  # выход
         self.ui.btn_exit_from_server.clicked.connect(lambda: self.disconnect_from_server())  # выход с сервера
         self.ui.btn_settings.clicked.connect(lambda: self.settings_page())  # окно настроек
         self.ui.btn_send_msg.clicked.connect(lambda: self.send_msg())  # отправляем письмо
         self.ui.btn_minimize_window.clicked.connect(lambda: self.showMinimized())  # кнопка сворачивания программв
         self.ui.btn_close_app.clicked.connect(self.close)  # кнопка завершения работы программы
+
+        # версия программы
+        self.ui.lbl_version.setText(self.__version)
 
         # настройка кнопок
         self.ui.btn_enter.setAutoDefault(True)  # нажатие <Enter>
@@ -103,6 +101,8 @@ class MyWindow(QtWidgets.QMainWindow):
         self.my_thread = MyThread()
         self.my_thread.my_signal.connect(self.receive_msg)
         self.my_thread.start()
+        if not self.db.create_database():
+            self.db.create_database()
 
         # настройка время
         self.timer = QTimer()
@@ -113,12 +113,12 @@ class MyWindow(QtWidgets.QMainWindow):
         # настройка рамки окна
         self.setWindowFlag(QtCore.Qt.FramelessWindowHint)
         self.setAttribute(QtCore.Qt.WA_AttributeCount)
-        self.setWindowIcon(QtGui.QIcon("C:\PycharmProjects\Chat\icon.png"))
 
         # настройка иконки
-        icon = QPixmap("C:\PycharmProjects\Chat\icon.png")
+        icon = QPixmap("C:\PycharmProjects\CHAT\img\logo.png")
         icon.size()
         self.ui.lbl_icon.setPixmap(icon)
+        self.setWindowIcon(QtGui.QIcon("C:\PycharmProjects\CHAT\img\logo.png"))
 
     # показ странциы регистрации
     def show_registration_page(self):
@@ -147,15 +147,16 @@ class MyWindow(QtWidgets.QMainWindow):
     def register_user(self):
         __login = self.ui.le_register_username.text()
         __password = self.ui.le_register_password.text()
-        self.logic.insert_data(__login, __password)
+        self.db.insert_data(__login, __password)
         time.sleep(1)
+        show_success_registration()
         self.show_authorization_page()
 
     # авторизация в мессенджер и присоединение к серверу
     def enter_to_messenger(self):
         __login = self.ui.le_input_username.text()  # получаем логин из поля ввода
         __password = self.ui.le_input_password.text()  # получаем пароль из поля ввода
-        validate = self.logic.check_data(__login, __password)  # проверка введённого пароля и логина
+        validate = self.db.check_data(__login, __password)  # проверка введённого пароля и логина
         if validate:
             time.sleep(1)
             # подлключение к серверу
@@ -170,8 +171,9 @@ class MyWindow(QtWidgets.QMainWindow):
             self.ui.lw_messages.addItem(
                 f"{__login}\t{datetime.now().strftime('%H:%M:%S %Y-%m-%d')}\n>>> Вы присоединились к серверу\n")  # отображем сообщение из формы в список
             self.start_Timer()  # показываем время
-        else:
-            sys.exit(0)
+        if not validate:
+            show_authorization_error()  # ошибка авторизации
+            self.show_authorization_page()
 
     # отправляем и получаем сообщения
     def send_msg(self):

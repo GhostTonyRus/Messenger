@@ -1,20 +1,16 @@
-"""
-В файле написан код для деплой на удалённый сервер. Файл принимает входящие соединения и сообщения, а потом отправляет
-их обратно клиенту.
-"""
-import sqlite3
 import socket
-import sys
 import threading
 from datetime import datetime
-from constants import IP, PORT
+from config import IP, PORT
 
-# server_addr = ("127.0.0.1", 11111)
-server_addr = (IP, PORT)
+server_address = (IP, PORT)
 
 
 class Server:
-
+    """
+    В файле написан код сервереа для загрузки на VPS сервер. Файл принимает входящие соединения и сообщения, а потом отправляет
+    их обратно клиентам.
+    """
     def __init__(self, family, connect_type):
         self.__family = family
         self.__type = connect_type
@@ -98,31 +94,7 @@ class Server:
 
 if __name__ == '__main__':
     server = Server(socket.AF_INET, socket.SOCK_STREAM)
-    # server.main(server_addr, 3)
-    s_a = ("127.0.0.1", 2222)
-    # server.main(s_a, 10)
-    thread_main = threading.Thread(target=server.main, args=(s_a, 10, ))
+    thread_main = threading.Thread(target=server.main, args=(server_address, 10,))
     thread_main.start()
     thread_main.join()
 
-    # # сохраняем полученные сообщения от клиентов в базу данных
-    # def save_message_in_db(self, user, data):
-    #     with sqlite3.connect("messages.db") as sq:
-    #         cur = sq.cursor()
-    #         cur.execute("""CREATE TABLE IF NOT EXISTS messages (
-    #                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    #                     user TEXT,
-    #                     message TEXT,
-    #                     datetime TEXT
-    #                     )""")
-    #         cur.execute(f"""
-    #         INSERT INTO messages
-    #             (id, user, message, datetime)
-    #             VALUES
-    #             (NULL, "{user}", "{data}", "{self.custom_msg_datetime}")
-    #         """)
-    #         messages = cur.execute("""
-    #             SELECT user, message, datetime FROM messages ORDER BY id DESC LIMIT 1
-    #             """)
-    #         for msg in messages.fetchall():
-    #             print(f"{msg[0]}>>> {msg[1]}: {msg[2]}")

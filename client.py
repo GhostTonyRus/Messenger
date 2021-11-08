@@ -1,33 +1,24 @@
-"""
-Файл с кодом для присоединения к серверу. Можно отпарвить сообщение и получить его обратно от сервера.
-"""
-import os
 import socket
-import sys
 import time
 from datetime import datetime
-import signal
-import threading
-from tests.threadTest import ThreadWithReturnValue
 
 
 # класс клиент
 class Client:
-
+    """
+    Файл с кодом для присоединения к серверу. Клиент отправляет сообщение и получает его обратно от сервера.
+    """
     def __init__(self):
         self.__client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        # self.__client.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.msg_datetime = datetime.now().strftime("%H:%M:%S %Y-%m-%d")
         self.custom_msg_datetime = self.msg_datetime  # .strftime("%H:%M:%S %Y-%m-%d")
 
     # подлкючение к серверу
     def connect_to_server(self, server_address):
         try:
-            self.__client.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            self.__client.connect(server_address)
-            print("Выполнено подключение к серверу")
+            self.conn = self.__client.connect(server_address)
         except socket.error as error:
-            print(f"Ошибка подключения: {error} 31")
+            raise error
         finally:
             return True
 
@@ -37,8 +28,11 @@ class Client:
         if len(message) == 0:
             pass
         elif message:
-            # отправляем данные
-            self.__client.sendall(str(f"{nickname}\t{custome_time}\n>>> {message}\n").encode())
+            try:
+                # отправляем данные
+                self.__client.sendall(str(f"{nickname}\t{custome_time}\n>>> {message}\n").encode())
+            except socket.error:
+                pass
 
     # получаем сообщение от сервера
     def receive_msg(self):
@@ -53,22 +47,22 @@ class Client:
                 elif len(data) == 0:
                     self.disconnect_from_server()
                     break
-            except socket.error as error:
-                print(f"{error} ошибка из 54")
+            except socket.error:
                 self.disconnect_from_server()
                 break
-        self.disconnect_from_server()
 
     # отсоединение от сервера
     def disconnect_from_server(self):
         try:
             self.__client.shutdown(socket.SHUT_RDWR)
-            print("Отключение от сервера, 64")
-        except socket.error as error:
-            print(error, "66")
-            time.sleep(5)
+        except socket.error:
+            pass
         finally:
+            time.sleep(1)
             self.__client.close()
+
+    def error(self):
+        raise Exception
 
     # # запуск получения сообщений в потоке
     # def thread_receive(self):
@@ -90,8 +84,3 @@ class Client:
     #     # запуск отправки сообщения
     #     thread_send_msg = threading.Thread(target=self.send_msg, args=(message, ))
     #     thread_send_msg.start()
-
-# if __name__ == '__main__':
-#     client = Client()
-#     client.connect_to_server("23.111.121.114", 12345)
-#     client.main()

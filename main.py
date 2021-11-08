@@ -16,6 +16,6 @@ if __name__ == '__main__':
 
 
 # pyuic5 UI/main_ui.ui -o main_ui.py
-# pyuic5 UI/settings_window.ui - o settings_window.py
+# pyuic5 UI/settings_window.ui - o settings_window_ui.py
 # pyinstaller -w -F --onefile --icon=C:\PycharmProjects\Chat\img\logo_img.ico --noconsole main.py
 # pyinstaller main.spec

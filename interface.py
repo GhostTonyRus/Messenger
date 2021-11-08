@@ -8,8 +8,8 @@ from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtCore import QPoint, QTimer, QThread, QDateTime
 from error_messages import show_empty_error, show_connect_error, show_authorization_error, show_success_registration
 from db_logic import DataBase
-from main_ui import Ui_MainWindow
-from settings_window import Ui_ChildWindow
+from UI.main_ui import Ui_MainWindow
+from UI.settings_window_ui import Ui_ChildWindow
 from client import Client
 
 client = Client()
